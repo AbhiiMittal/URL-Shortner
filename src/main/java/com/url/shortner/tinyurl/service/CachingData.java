@@ -2,6 +2,7 @@ package com.url.shortner.tinyurl.service;
 
 import com.url.shortner.tinyurl.model.DomainName;
 import com.url.shortner.tinyurl.model.ProtocolsType;
+import com.url.shortner.tinyurl.model.UrlResponseDTO;
 import com.url.shortner.tinyurl.model.Urls;
 import com.url.shortner.tinyurl.repository.DomainsNameRepository;
 import com.url.shortner.tinyurl.repository.ProtocolTypeRepository;
@@ -20,7 +21,7 @@ public class CachingData {
     private static final String PREFIX = "cachedShortUrls::";
 
     @Autowired
-    private RedisTemplate<String, Urls> redisTemplate;
+    private RedisTemplate<String, UrlResponseDTO> redisTemplate;
 
     @Autowired
     UrlRepository urlRepository;
@@ -31,10 +32,10 @@ public class CachingData {
     @Autowired
     ProtocolTypeRepository protocolTypeRepository;
 
-    public Urls checkingInRedis(String shortcode){
+    public UrlResponseDTO checkingInRedis(String shortcode){
         String key = PREFIX + shortcode;
 
-        Urls url = redisTemplate.opsForValue().get(key);
+        UrlResponseDTO url = redisTemplate.opsForValue().get(key);
         if(url!=null){
             redisTemplate.expire(key,SLIDING_TTL);
             return url;
@@ -42,14 +43,15 @@ public class CachingData {
         return findIfUrlExists(shortcode);
     }
     @Cacheable(value = "cachedShortUrls",key = "#shortcode")
-    public Urls findIfUrlExists(String shortcode){
+    public UrlResponseDTO findIfUrlExists(String shortcode){
         return findShortUrlExists(shortcode);
     }
 
-    public Urls findShortUrlExists(String url){
+    public UrlResponseDTO findShortUrlExists(String url){
         try{
             Urls urls = urlRepository.findByShortcode(url);
             if(urls==null) return null;
+            UrlResponseDTO urlResponseDTO = new UrlResponseDTO(urls.getUrlId(), urls.getOriginalUrl(), urls.getShortcode());
             Long domainId = urls.getDomainId();
             Long protocolId = urls.getProtocolId();
             Optional<ProtocolsType> protocolsType = protocolTypeRepository.findById(protocolId);
@@ -62,8 +64,8 @@ public class CachingData {
             String domain = domainName.get().getDomainName();
             String path = urls.getOriginalUrl();
             String finalUrl = protocolType +"://"+domain+path;
-            urls.setOriginalUrl(finalUrl);
-            return urls;
+            urlResponseDTO.setOriginalUrl(finalUrl);
+            return urlResponseDTO;
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }

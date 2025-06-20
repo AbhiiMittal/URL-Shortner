@@ -3,10 +3,7 @@ package com.url.shortner.tinyurl.service;
 import com.url.shortner.tinyurl.helper.BloomFilterService;
 import com.url.shortner.tinyurl.helper.GenerateHashedUrl;
 import com.url.shortner.tinyurl.helper.SaveActivity;
-import com.url.shortner.tinyurl.model.BannedUrls;
-import com.url.shortner.tinyurl.model.DomainName;
-import com.url.shortner.tinyurl.model.ProtocolsType;
-import com.url.shortner.tinyurl.model.Urls;
+import com.url.shortner.tinyurl.model.*;
 import com.url.shortner.tinyurl.repository.BannedUrlsRepository;
 import com.url.shortner.tinyurl.repository.DomainsNameRepository;
 import com.url.shortner.tinyurl.repository.ProtocolTypeRepository;
@@ -47,7 +44,7 @@ public class UrlServiceImpl implements UrlService{
     public String createNewUrl(String url,Long userId) {
         try{
             String shortcode = generateHashedUrl.generateShortUrl(url);
-            Urls urls = cachingData.checkingInRedis(shortcode);
+            UrlResponseDTO urls = cachingData.checkingInRedis(shortcode);
             if (urls != null) {
                 Long urlId = urls.getUrlId();
                 if(checkIfUrlBanned(shortcode)){
@@ -69,7 +66,7 @@ public class UrlServiceImpl implements UrlService{
     @Override
     public String getOriginalUrl(String shortcode,Long userId) {
         try{
-            Urls urls = cachingData.checkingInRedis(shortcode);
+            UrlResponseDTO urls = cachingData.checkingInRedis(shortcode);
             if (urls != null) {
                 Long urlId = urls.getUrlId();
                 String originalUrl = urls.getOriginalUrl();
