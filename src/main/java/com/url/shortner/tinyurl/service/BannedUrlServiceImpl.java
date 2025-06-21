@@ -9,6 +9,8 @@ import com.url.shortner.tinyurl.repository.UrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @Service
@@ -33,15 +35,20 @@ public class BannedUrlServiceImpl implements BannedUrlService{
 
     @Override
     public String createUrl(String url) {
-        Urls urls = urlRepository.findByOriginalUrl(url);
-        Long id = urls!=null ? urls.getUrlId() : 0L;
-        if(urls==null){
-            String shortcode = generateHashedUrl.generateShortUrl(url);
-            Urls urls1 = urlRepository.save(new Urls(url,shortcode));
-            id = urls1.getUrlId();
-            bloomFilterService.addToFilter(shortcode);
+        try{
+            URI uri = new URI(url);
+            Urls urls = urlRepository.findByOriginalUrl(uri.getPath());
+            Long id = urls != null ? urls.getUrlId() : 0L;
+            if (urls == null) {
+                String shortcode = generateHashedUrl.generateShortUrl(url);
+                Urls urls1 = urlRepository.save(new Urls(url, shortcode));
+                id = urls1.getUrlId();
+                bloomFilterService.addToFilter(shortcode);
+            }
+            bannedUrlsRepository.save(new BannedUrls(id, 1));
+            return "created successfully";
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e.getMessage());
         }
-        bannedUrlsRepository.save(new BannedUrls(id,1));
-        return "created successfully";
     }
 }

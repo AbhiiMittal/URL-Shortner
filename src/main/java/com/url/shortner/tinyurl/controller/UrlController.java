@@ -33,7 +33,14 @@ public class UrlController {
         }
     }
     @PostMapping("/create-new-url/{userId}")
-    public String createNewUrl(@RequestBody UrlRequestDTO urlRequestDTO,@PathVariable Long userId){
-        return urlService.createNewUrl(urlRequestDTO.getUrl(),userId);
+    public ResponseEntity<?> createNewUrl(@RequestBody UrlRequestDTO urlRequestDTO,@PathVariable Long userId){
+        try{
+            return ResponseEntity.ok(urlService.createNewUrl(urlRequestDTO.getUrl(), userId));
+        }catch (Exception e){
+            return ResponseEntity
+                    .status(HttpStatus.REQUEST_TIMEOUT)
+                    .body(e.getMessage());
+
+        }
     }
 }
